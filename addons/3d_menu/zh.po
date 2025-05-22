@@ -1,0 +1,106 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Menu3D"
+msgstr "菜单选择"
+
+msgid "Panel Edit"
+msgstr "面板编辑"
+
+msgid "Title Text"
+msgstr "标题"
+
+msgid "Title Desc Font Size"
+msgstr "标题字体大小"
+
+msgid "Title Desc Text Color"
+msgstr "标题文本颜色"
+
+msgid "Option Number"
+msgstr "选项数量"
+
+msgid "Option Text 1"
+msgstr "选项文本1"
+
+msgid "Option Text 2"
+msgstr "选项文本2"
+
+msgid "Option Text 3"
+msgstr "选项文本3"
+
+msgid "Option Text 4"
+msgstr "选项文本4"
+
+msgid "Option Text 5"
+msgstr "选项文本5"
+
+msgid "Option Text 6"
+msgstr "选项文本6"
+
+msgid "Option Text 7"
+msgstr "选项文本7"
+
+msgid "Option Text 8"
+msgstr "选项文本8"
+
+msgid "Option Text 9"
+msgstr "选项文本9"
+
+msgid "Otn Font Size"
+msgstr "选项字体大小"
+
+msgid "Option Text Color"
+msgstr "选项文本颜色"
+
+msgid "Custom Style"
+msgstr "自定义样式"
+
+msgid "Enable Billboard"
+msgstr "启用公告牌"
+
+msgid "Menu Style"
+msgstr "菜单样式"
+
+msgid "Menu Layout"
+msgstr "面板布局"
+
+msgid "Panel Alpha"
+msgstr "面板不透明度"
+
+msgid "Gui Scale"
+msgstr "面板缩放比"
+
+msgid "Width Pixel"
+msgstr "宽度（像素）"
+
+msgid "Height Pixel"
+msgstr "高度（像素）"
+
+msgid "Render Priority"
+msgstr "渲染优先级"
+
+msgid "c_enable_billboard"
+msgstr "启用公告牌"
+
+msgid "c_menu_style"
+msgstr "菜单样式"
+
+msgid "c_menu_layout"
+msgstr "面板布局"
+
+msgid "c_panel_alpha"
+msgstr "面板不透明度"
+
+msgid "c_gui_scale"
+msgstr "面板缩放比"
+
+msgid "c_width_pixel"
+msgstr "宽度（像素）"
+
+msgid "c_height_pixel"
+msgstr "高度（像素）"
+
+msgid "c_render_priority"
+msgstr "渲染优先级"

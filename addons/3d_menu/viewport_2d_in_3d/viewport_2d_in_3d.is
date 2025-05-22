@@ -1,0 +1,142 @@
+tool
+extends Spatial
+
+export var enable_collision = true setget set_enable_collision
+export var enable_mouse_input = true
+export var enable_pointer_input = true
+export var screen_size = Vector2(3.0, 2.0) setget set_screen_size
+export var viewport_size = Vector2(300.0, 200.0) setget set_viewport_size
+export var enable_billboard = false setget set_billboard
+export var enable_back_culling = true setget set_back_culling
+export var no_depth_test = false setget set_no_depth_test
+export var transparent = true setget set_transparent
+enum BlendMode { 
+	BLEND_MODE_MIX = SpatialMaterial.BLEND_MODE_MIX,
+	BLEND_MODE_ADD = SpatialMaterial.BLEND_MODE_ADD,
+	BLEND_MODE_SUB = SpatialMaterial.BLEND_MODE_SUB,
+	BLEND_MODE_MUL = SpatialMaterial.BLEND_MODE_MUL
+}
+export (BlendMode) var blend_mode = BlendMode.BLEND_MODE_MIX setget set_screen_blend_mode
+export (int) var render_priority = 0 setget set_render_priority
+export (PackedScene) var scene = null setget set_scene
+
+# Need to replace this with proper solution once support for layer selection has been added 
+export (int, FLAGS, "Layer 1", "Layer 2", "Layer 3", "Layer 4", "Layer 5", "Layer 6", "Layer 7", "Layer 8", "Layer 9", "Layer 10", "Layer 11", "Layer 12", "Layer 13", "Layer 14", "Layer 15", "Layer 16", "Layer 17", "Layer 18", "Layer 19", "Layer 20") var collision_layer = 2 setget set_collision_layer
+
+var is_ready = false
+var scene_node = null setget set_scene_node
+
+func set_enable_collision(p_enabled):
+	enable_collision = p_enabled
+	if is_ready and $static_body:
+		_on_static_body_visibility_changed()
+	
+func set_no_depth_test(no_test):
+	no_depth_test = no_test
+	if is_ready:
+		var material : SpatialMaterial = $screen.get_surface_material(0)
+		material.flags_no_depth_test = no_depth_test
+	
+func set_back_culling(enable):
+	enable_back_culling = enable
+	if is_ready:
+		var material : SpatialMaterial = $screen.get_surface_material(0)
+		var mode = SpatialMaterial.CULL_BACK if enable_back_culling else SpatialMaterial.CULL_DISABLED
+		material.params_cull_mode = mode
+	
+func set_billboard(enable):
+	enable_billboard = enable
+	if is_ready:
+		var material : SpatialMaterial = $screen.get_surface_material(0)
+		var mode = SpatialMaterial.BILLBOARD_ENABLED if enable_billboard else SpatialMaterial.BILLBOARD_DISABLED
+		material.params_billboard_mode = mode
+	
+func set_render_priority(new_priority):
+	render_priority = new_priority
+	if is_ready:
+		var material : SpatialMaterial = $screen.get_surface_material(0)
+		material.render_priority = render_priority
+	
+func set_screen_blend_mode(new_mode):
+	blend_mode = new_mode
+	if is_ready:
+		var material : SpatialMaterial = $screen.get_surface_material(0)
+		material.params_blend_mode = blend_mode
+	
+func set_screen_size(new_size: Vector2):
+	screen_size = new_size
+	if is_ready:
+		$screen.mesh.size = screen_size
+		$static_body.screen_size = screen_size
+		$static_body/collision_shape.shape.extents = Vector3(screen_size.x * 0.5, screen_size.y * 0.5, 0.01)
+
+func set_viewport_size(new_size: Vector2):
+	viewport_size = new_size
+	if is_ready:
+		$viewport.size = new_size
+		$static_body.viewport_size = new_size
+
+func set_transparent(new_transparent: bool):
+	transparent = new_transparent
+	if is_ready:
+		var material : SpatialMaterial = $screen.get_surface_material(0)
+		material.flags_transparent = transparent
+		$viewport.transparent_bg = transparent
+
+func set_collision_layer(new_layer: int):
+	collision_layer = new_layer
+	if is_ready:
+		$static_body.collision_layer = collision_layer
+
+func set_scene(new_scene: PackedScene):
+	scene = new_scene
+	if is_ready:
+		# in with the new
+		if scene:
+			set_scene_node(scene.instance())
+
+func set_scene_node(new_node):
+	if scene_node:
+		$viewport.remove_child(scene_node)
+		scene_node.queue_free()
+	
+	scene_node = new_node
+	$viewport.add_child(scene_node)
+
+func get_scene_instance():
+	if get_node("viewport").get_children():
+		return get_node("viewport").get_child(0)
+
+func connect_scene_signal(which, on, callback, binds=[]):
+	if scene_node:
+		scene_node.connect(which, on, callback, binds)
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	# apply properties
+	is_ready = true
+	set_screen_size(screen_size)
+	set_viewport_size(viewport_size)
+	set_scene(scene)
+	set_collision_layer(collision_layer)
+	set_no_depth_test(no_depth_test)
+	set_transparent(transparent)
+	set_screen_blend_mode(blend_mode)
+	set_render_priority(render_priority)
+	set_back_culling(enable_back_culling)
+	set_billboard(enable_billboard)
+	set_enable_collision(enable_collision)
+	
+	_on_self_visibility_changed()
+	connect("visibility_changed", self, "_on_self_visibility_changed")
+	_on_static_body_visibility_changed()
+	$static_body.connect("visibility_changed", self, "_on_static_body_visibility_changed")
+	
+func _on_self_visibility_changed():
+	var instance = get_scene_instance()
+	if instance:
+		instance.visible = is_visible_in_tree()
+
+func _on_static_body_visibility_changed():
+	$static_body/collision_shape.disabled = not enable_collision or not is_visible_in_tree()
+

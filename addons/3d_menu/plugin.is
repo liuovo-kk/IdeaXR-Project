@@ -1,0 +1,10 @@
+tool
+extends EditorPlugin
+
+
+func _enter_tree():
+	add_custom_type("Menu3D", "Spatial", preload("res://addons/3d_menu/info_3d_menu.is"), preload("res://addons/3d_menu/menu_3d.svg"))
+
+
+func _exit_tree():
+	remove_custom_type("Menu3D")

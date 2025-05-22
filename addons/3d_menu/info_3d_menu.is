@@ -1,0 +1,683 @@
+tool
+extends Spatial
+
+signal button_pressed(index:int)
+
+var title_text:String = "请输入标题" setget set_title_text
+var title_desc_font_size:int = 45 setget set_title_font_size
+var title_desc_text_color:Color = Color(1,1,1,1) setget set_desc_text_color
+#var enable_button = true setget set_enable_button
+#added button
+var option_number:int = 3 setget set_button_number
+var pre_button_num_v
+var pre_button_num_h
+var mod = Vector2.ONE
+var option_text_1:String = "选项一" setget set_button_text
+var option_text_2:String = "选项二" setget set_button_text2
+var option_text_3:String = "选项三" setget set_button_text3
+var option_text_4:String = "选项四" setget set_button_text4
+var option_text_5:String = "选项五" setget set_button_text5
+var option_text_6:String = "选项六" setget set_button_text6
+var option_text_7:String = "选项七" setget set_button_text7
+var option_text_8:String = "选项八" setget set_button_text8
+var option_text_9:String = "选项九" setget set_button_text9
+
+var button1_h
+var button2_h
+var button3_h
+var button4_h
+var button5_h
+var button6_h
+var button7_h 
+var button8_h 
+var button9_h 
+
+var button1_v
+var button2_v
+var button3_v
+var button4_v
+var button5_v
+var button6_v
+var button7_v 
+var button8_v 
+var button9_v 
+
+var option_text_color:Color = Color(1,1,1,1) setget set_button_text_color
+#var auto_close = true setget set_auto_close
+var otn_font_size:int = 25 setget set_btn_font_size
+
+var c_gui_scale:float = 0.1 setget set_gui_scale
+var c_width_pixel:int = 1080 setget set_width
+var c_height_pixel:int = 500 setget set_height
+var c_enable_billboard:bool = false
+#var no_depth_test = false setget set_no_depth_test
+var c_render_priority:int = 0 setget set_render_priority
+
+var c_menu_style:String = "蓝色科技" setget set_menu_style
+var c_menu_layout:String = "横向布局" setget set_menu_layout
+var c_panel_alpha:float = 0.5 setget set_alpha
+
+var is_ready = false
+
+"""多人协同添加"""
+# 用于存储ServerConnection单例
+var server_connection
+func _get_property_list() -> Array:
+	var properties = [
+		{name="panel_edit",type=TYPE_NIL,usage=PROPERTY_USAGE_GROUP},
+		{name="title_text",type=TYPE_STRING},
+		{name="title_desc_font_size",type=TYPE_INT,hint=PROPERTY_HINT_RANGE,hint_string="10,100,1"},
+		{name="title_desc_text_color",type=TYPE_COLOR},
+		{name="custom_style",type=TYPE_NIL,usage=PROPERTY_USAGE_GROUP,hint_string="c_"},
+		{name="c_enable_billboard",type=TYPE_BOOL},
+		{name="c_menu_style",type=TYPE_STRING,hint=PROPERTY_HINT_ENUM,hint_string="蓝色科技,红色应急,绿色活力"},
+		{name="c_menu_layout",type=TYPE_STRING,hint=PROPERTY_HINT_ENUM,hint_string="横向布局,纵向布局"},
+		{name="c_panel_alpha",type=TYPE_REAL,hint=PROPERTY_HINT_EXP_RANGE,hint_string="0.05,1.0,0.01"},
+		{name="c_gui_scale",type=TYPE_REAL,hint=PROPERTY_HINT_EXP_RANGE,hint_string="0.05,1.0,0.01"},
+		{name="c_width_pixel",type=TYPE_INT,hint=PROPERTY_HINT_RANGE,hint_string="400,2000,1"},
+		{name="c_height_pixel",type=TYPE_INT,hint=PROPERTY_HINT_RANGE,hint_string="400,2000,1"},
+		{name="c_render_priority",type=TYPE_INT}
+	]
+#	if enable_button:
+	for i in range(0, option_number):
+		if i == 0:
+			properties.insert(4,{name="option_number",type=TYPE_INT,hint=PROPERTY_HINT_RANGE,hint_string="1,9,1"})
+			properties.insert(5,{name="option_text_1",type=TYPE_STRING})
+			properties.insert(6,{name="otn_font_size",type=TYPE_INT,hint=PROPERTY_HINT_RANGE,hint_string="10,100,1"})
+			properties.insert(7,{name="option_text_color",type=TYPE_COLOR})
+		#added button
+		if i >= 1:
+			properties.insert(5 + i,{name="option_text_" + var2str(i + 1),type=TYPE_STRING})
+	return properties
+
+func get_gui():
+	if not get_node_or_null("ideavr_panel"):
+		return
+
+	return $ideavr_panel/viewport_2d_in_3d.get_scene_instance()
+
+func get_label():
+	var gui = get_gui()
+
+	if c_menu_layout == "横向布局":
+		return gui.get_node("info_panel_h/title")
+	elif c_menu_layout == "纵向布局":
+		return gui.get_node("info_panel_v/title")
+		
+func set_menu_style(p_style):
+	c_menu_style = p_style
+	
+	if not get_node_or_null("ideavr_panel"):
+		return
+
+	var panel_h = get_gui().get_node("info_panel_h")
+	var panel_v = get_gui().get_node("info_panel_v")
+	var panel2_h = panel_h.get_node("panel")
+	var panel2_v = panel_v.get_node("panel")
+
+	if c_menu_style == "蓝色科技":
+		if c_menu_layout == "横向布局":
+			panel_h.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/蓝色横板背景.png")
+			panel2_h.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/蓝色横.png")
+			for i in panel_h.get_node("layout").get_children():
+				i.get_node("button").get("custom_styles/normal").texture = load("res://addons/3d_menu/2d_res/blue_normal.png")
+				i.get_node("button").get("custom_styles/hover").texture = load("res://addons/3d_menu/2d_res/blue_hover.png")
+				i.get_node("button").get("custom_styles/pressed").texture = load("res://addons/3d_menu/2d_res/blue_pressed.png")
+		elif c_menu_layout == "纵向布局":
+			panel_v.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/蓝色竖版背景.png")
+			panel2_v.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/蓝色竖.png")
+			for i in panel_v.get_node("layout").get_children():
+				i.get_node("button").get("custom_styles/normal").texture = load("res://addons/3d_menu/2d_res/blue_normal.png")
+				i.get_node("button").get("custom_styles/hover").texture = load("res://addons/3d_menu/2d_res/blue_hover.png")
+				i.get_node("button").get("custom_styles/pressed").texture = load("res://addons/3d_menu/2d_res/blue_pressed.png")
+	elif c_menu_style == "红色应急":
+		if c_menu_layout == "横向布局":
+			panel_h.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/红色横板背景.png")
+			panel2_h.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/红色横.png")
+			for i in panel_h.get_node("layout").get_children():
+				i.get_node("button").get("custom_styles/normal").texture = load("res://addons/3d_menu/2d_res/orange_normal.png")
+				i.get_node("button").get("custom_styles/hover").texture = load("res://addons/3d_menu/2d_res/orange_hover.png")
+				i.get_node("button").get("custom_styles/pressed").texture = load("res://addons/3d_menu/2d_res/orange_pressed.png")
+		elif c_menu_layout == "纵向布局":
+			panel_v.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/红色竖版背景.png")
+			panel2_v.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/红色竖.png")
+			for i in panel_v.get_node("layout").get_children():
+				i.get_node("button").get("custom_styles/normal").texture = load("res://addons/3d_menu/2d_res/orange_normal.png")
+				i.get_node("button").get("custom_styles/hover").texture = load("res://addons/3d_menu/2d_res/orange_hover.png")
+				i.get_node("button").get("custom_styles/pressed").texture = load("res://addons/3d_menu/2d_res/orange_pressed.png")
+	elif c_menu_style == "绿色活力":
+		if c_menu_layout == "横向布局":
+			panel_h.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/绿色横板背景.png")
+			panel2_h.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/绿色横.png")
+			for i in panel_h.get_node("layout").get_children():
+				i.get_node("button").get("custom_styles/normal").texture = load("res://addons/3d_menu/2d_res/green_normal.png")
+				i.get_node("button").get("custom_styles/hover").texture = load("res://addons/3d_menu/2d_res/green_hover.png")
+				i.get_node("button").get("custom_styles/pressed").texture = load("res://addons/3d_menu/2d_res/green_pressed.png")
+		elif c_menu_layout == "纵向布局":
+			panel_v.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/绿色竖版背景.png")
+			panel2_v.get("custom_styles/panel").texture = load("res://addons/3d_menu/2d_res/绿色横.png")
+			for i in panel_v.get_node("layout").get_children():
+				i.get_node("button").get("custom_styles/normal").texture = load("res://addons/3d_menu/2d_res/green_normal.png")
+				i.get_node("button").get("custom_styles/hover").texture = load("res://addons/3d_menu/2d_res/green_hover.png")
+				i.get_node("button").get("custom_styles/pressed").texture = load("res://addons/3d_menu/2d_res/green_pressed.png")
+	
+func set_menu_layout(p_layout):
+	c_menu_layout = p_layout
+	
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if c_menu_layout == "横向布局":
+		get_gui().get_node("info_panel_h").show()
+		get_gui().get_node("info_panel_v").hide()
+		if is_ready or Engine.editor_hint:
+			set_height(500)
+			set_width(1080)
+
+	elif c_menu_layout == "纵向布局":
+		get_gui().get_node("info_panel_h").hide()
+		get_gui().get_node("info_panel_v").show()
+		if is_ready or Engine.editor_hint:
+			if option_number == 5:
+				set_height(750)
+				set_width(450)
+			elif option_number == 6:
+				set_height(880)
+				set_width(450)
+			elif option_number == 7:
+				set_height(1030)
+				set_width(450)
+			elif option_number == 8:
+				set_height(1200)
+				set_width(450)
+			elif option_number == 9:
+				set_height(1350)
+				set_width(450)
+			else:
+				set_height(700)
+				set_width(450)
+		
+	set_button_number(option_number)
+	set_btn_font_size(otn_font_size)
+	set_menu_style(c_menu_style)
+	set_alpha(c_panel_alpha)
+	set_title_text(title_text)
+	set_button_text(option_text_1)
+	set_button_text2(option_text_2)
+	set_button_text3(option_text_3)
+	set_button_text4(option_text_4)
+	set_button_text5(option_text_5)
+	set_button_text6(option_text_6)
+	set_button_text7(option_text_7)
+	set_button_text8(option_text_8)
+	set_button_text9(option_text_9)
+	set_desc_text_color(title_desc_text_color)
+	set_button_text_color(option_text_color)
+	property_list_changed_notify()
+		
+func set_button_number(number):
+	option_number = number
+	
+	if not get_node_or_null("ideavr_panel"):
+		return
+
+	set_button()
+	var layout_h = get_gui().get_node("info_panel_h/layout")
+	var layout_v = get_gui().get_node("info_panel_v/layout")
+	
+	if pre_button_num_h == null :
+		pre_button_num_h = option_number
+	if pre_button_num_v == null :
+		pre_button_num_v = option_number
+		
+	if c_menu_layout == "横向布局":
+		
+		if option_number == 1:
+			layout_h.columns = 1
+		elif option_number == 2:
+			layout_h.columns = 2
+		elif option_number >= 3:
+			layout_h.columns = 3
+		if pre_button_num_h > option_number:
+			var a = 1
+			for i in layout_h.get_children():
+				if a > option_number:
+					i.hide()
+				a += 1
+			pre_button_num_h = option_number
+		elif pre_button_num_h < option_number:
+			for i in range(pre_button_num_h+1,option_number + 1):
+				if i == 2:
+					button2_h.get_node("button").text = "选项二"
+					button2_h.show()
+				elif i == 3:
+					button3_h.get_node("button").text = "选项三"
+					button3_h.show()
+				elif i == 4:
+					button4_h.get_node("button").text = "选项四"
+					button4_h.show()
+				elif i == 5:
+					button5_h.get_node("button").text = "选项五"
+					button5_h.show()
+				elif i == 6:
+					button6_h.get_node("button").text = "选项六"
+					button6_h.show()
+				elif i == 7:
+					button7_h.get_node("button").text = "选项七"
+					button7_h.show()
+				elif i == 8:
+					button8_h.get_node("button").text = "选项八"
+					button8_h.show()
+				elif i == 9:
+					button9_h.get_node("button").text = "选项九"
+					button9_h.show()
+						
+			pre_button_num_h = option_number
+			
+	elif c_menu_layout == "纵向布局":
+		if pre_button_num_v > option_number:
+			var a = 1
+			for i in layout_v.get_children():
+				if a > option_number:
+					i.hide()
+				a += 1
+			pre_button_num_v = option_number
+		elif pre_button_num_v < option_number:
+			for i in range(pre_button_num_v+1,option_number + 1):
+				if i == 2:
+					button2_v.get_node("button").text = "选项二"
+					button2_v.show()
+				elif i == 3:
+					button3_v.get_node("button").text = "选项三"
+					button3_v.show()
+				elif i == 4:
+					button4_v.get_node("button").text = "选项四"
+					button4_v.show()
+				elif i == 5:
+					button5_v.get_node("button").text = "选项五"
+					button5_v.show()
+				elif i == 6:
+					button6_v.get_node("button").text = "选项六"
+					button6_v.show()
+				elif i == 7:
+					button7_v.get_node("button").text = "选项七"
+					button7_v.show()
+				elif i == 8:
+					button8_v.get_node("button").text = "选项八"
+					button8_v.show()
+				elif i == 9:
+					button9_v.get_node("button").text = "选项九"
+					button9_v.show()
+			pre_button_num_v = option_number
+			
+		
+	property_list_changed_notify()
+		
+		
+#func set_enable_button(p_enable):
+#	enable_button = p_enable
+#	if not get_node_or_null("ideavr_panel"):
+#		return
+#
+#	if enable_button:
+#		get_gui().get_node("info_panel_h/layout").show()
+#		get_gui().get_node("info_panel_v/layout").show()
+#	else:
+#		get_gui().get_node("info_panel_h/layout").hide()
+#		get_gui().get_node("info_panel_v/layout").hide()
+#	property_list_changed_notify()
+
+func set_height(new_height):
+	c_height_pixel = new_height
+	if not get_node_or_null("ideavr_panel"):
+		return
+	$ideavr_panel/viewport_2d_in_3d.is_ready = true
+	if c_menu_layout == "横向布局":
+		get_gui().get_node("info_panel_h").rect_size.y = c_height_pixel
+	elif c_menu_layout == "纵向布局":
+		if c_height_pixel < 500:
+			c_height_pixel = 500
+		get_gui().get_node("info_panel_v").rect_size.y = c_height_pixel
+	$ideavr_panel/viewport_2d_in_3d.screen_size.y = c_height_pixel * c_gui_scale * 0.02
+	$ideavr_panel/viewport_2d_in_3d.viewport_size.y = c_height_pixel
+	
+
+
+func set_width(new_width):
+	c_width_pixel = new_width
+
+	if not get_node_or_null("ideavr_panel"):
+		return
+	$ideavr_panel/viewport_2d_in_3d.is_ready = true
+	if c_menu_layout == "横向布局":
+		if c_width_pixel < 850:
+			c_width_pixel = 850
+		get_gui().get_node("info_panel_h").rect_size.x = c_width_pixel
+	elif c_menu_layout == "纵向布局":
+		get_gui().get_node("info_panel_v").rect_size.x = c_width_pixel
+	$ideavr_panel/viewport_2d_in_3d.screen_size.x = c_width_pixel * c_gui_scale * 0.02
+	$ideavr_panel/viewport_2d_in_3d.viewport_size.x = c_width_pixel
+
+func set_btn_font_size(new_size):
+	otn_font_size = new_size
+
+	if not get_node_or_null("ideavr_panel"):
+		return
+	
+	var layout_h = get_gui().get_node("info_panel_h/layout")
+	var layout_v = get_gui().get_node("info_panel_v/layout")
+	if c_menu_layout == "横向布局":
+		for i in layout_h.get_children():
+			i.get_node("button").get_font("font").size = otn_font_size
+	elif c_menu_layout == "纵向布局":
+		for i in layout_v.get_children():
+			i.get_node("button").get_font("font").size = otn_font_size
+
+func set_title_font_size(new_size):
+	title_desc_font_size = new_size
+
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	var node = get_label()
+	if node:
+		node.get_font("font").size = title_desc_font_size
+	
+func set_button_text(text):
+	option_text_1 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if c_menu_layout == "横向布局":
+		button1_h = get_gui().get_node("info_panel_h/layout/button1")
+		button1_h.get_node("button").text = option_text_1
+	elif c_menu_layout == "纵向布局":
+		button1_v = get_gui().get_node("info_panel_v/layout/button1")
+		button1_v.get_node("button").text = option_text_1
+
+#added_button
+func set_button_text2(text):
+	option_text_2 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if option_number >= 2:
+		if c_menu_layout == "横向布局":
+			button2_h.get_node("button").text = option_text_2
+		elif c_menu_layout == "纵向布局":
+			button2_v.get_node("button").text = option_text_2
+
+func set_button_text3(text):
+	option_text_3 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if option_number >= 3:
+		if c_menu_layout == "横向布局":
+			button3_h.get_node("button").text = option_text_3
+		elif c_menu_layout == "纵向布局":
+			button3_v.get_node("button").text = option_text_3
+
+func set_button_text4(text):
+	option_text_4 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+
+	if option_number >= 4:
+		if c_menu_layout == "横向布局":
+			button4_h.get_node("button").text = option_text_4
+		elif c_menu_layout == "纵向布局":
+			button4_v.get_node("button").text = option_text_4
+
+func set_button_text5(text):
+	option_text_5 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if option_number >= 5:
+		if c_menu_layout == "横向布局":
+			button5_h.get_node("button").text = option_text_5
+		elif c_menu_layout == "纵向布局":
+			button5_v.get_node("button").text = option_text_5
+
+func set_button_text6(text):
+	option_text_6 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if option_number >= 6:
+		if c_menu_layout == "横向布局":
+			button6_h.get_node("button").text = option_text_6
+		elif c_menu_layout == "纵向布局":
+			button6_v.get_node("button").text = option_text_6
+
+func set_button_text7(text):
+	option_text_7 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if option_number >= 7:
+		if c_menu_layout == "横向布局":
+			button7_h.get_node("button").text = option_text_7
+		elif c_menu_layout == "纵向布局":
+			button7_v.get_node("button").text = option_text_7
+		
+func set_button_text8(text):
+	option_text_8 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if option_number >= 8:
+		if c_menu_layout == "横向布局":
+			button8_h.get_node("button").text = option_text_8
+		elif c_menu_layout == "纵向布局":
+			button8_v.get_node("button").text = option_text_8
+		
+func set_button_text9(text):
+	option_text_9 = text
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	if option_number >= 9:
+		if c_menu_layout == "横向布局":
+			button9_h.get_node("button").text = option_text_9
+		elif c_menu_layout == "纵向布局":
+			button9_v.get_node("button").text = option_text_9
+
+func set_button_text_color(p_color):
+	option_text_color = p_color
+	
+	if not get_node_or_null("ideavr_panel"):
+		return
+	
+
+	var panel_h = get_gui().get_node("info_panel_h")
+	var panel_v = get_gui().get_node("info_panel_v")
+	if c_menu_layout == "横向布局":
+		for i in panel_h.get_node("layout").get_children():
+			i.get_node("button").set("custom_colors/font_color",option_text_color)
+			i.get_node("button").set("custom_colors/font_color_hover",option_text_color)
+			i.get_node("button").set("custom_colors/font_color_pressed",option_text_color)
+	elif c_menu_layout == "纵向布局":
+		for i in panel_v.get_node("layout").get_children():
+			i.get_node("button").set("custom_colors/font_color",option_text_color)
+			i.get_node("button").set("custom_colors/font_color_hover",option_text_color)
+			i.get_node("button").set("custom_colors/font_color_pressed",option_text_color)
+
+	if self.visible:
+		self.hide()
+		self.show()
+	
+	#added_button
+func set_title_text(text):
+	title_text = text
+
+	if not get_node_or_null("ideavr_panel"):
+		return
+	
+	var node = get_label()
+	if node:
+		node.text = title_text
+		
+	property_list_changed_notify()
+
+func set_desc_text_color(p_color):
+	title_desc_text_color = p_color
+	
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	var node = get_label()
+	if node:
+		node.set("custom_colors/font_color",title_desc_text_color)
+		
+
+func set_gui_scale(new_scale):
+	c_gui_scale = new_scale
+	
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	set_height(c_height_pixel)
+	set_width(c_width_pixel)
+	$ideavr_panel/viewport_2d_in_3d/screen.update_gizmo()
+	
+func set_alpha(p_alpha):
+	c_panel_alpha = p_alpha
+	
+	if not get_node_or_null("ideavr_panel"):
+		return
+	
+	if c_menu_layout == "横向布局":
+		get_gui().get_node("info_panel_h").set("self_modulate",Color(1,1,1,c_panel_alpha))
+	elif c_menu_layout == "纵向布局":
+		get_gui().get_node("info_panel_v").set("self_modulate",Color(1,1,1,c_panel_alpha))
+
+func set_render_priority(new_priority):
+	c_render_priority = new_priority
+	if not get_node_or_null("ideavr_panel"):
+		return
+		
+	$ideavr_panel/viewport_2d_in_3d.render_priority = c_render_priority
+
+func _ready():
+	if get_child_count() > 0:
+		for child in get_children():
+			if child.name == "ideavr_panel":
+				remove_child(child)
+	connect("visibility_changed",self,"_on_visibility_changed")
+	
+	var viewport_node = preload("res://addons/3d_menu/3d_menu.scene").instance()
+	add_child(viewport_node)
+	viewport_node.set_owner(self)
+	viewport_node.get_node("viewport_2d_in_3d").scene = preload("res://addons/3d_menu/2d_res/info_panel.scene")
+	viewport_node.name = "ideavr_panel"
+	
+	pre_button_num_h = 1
+	pre_button_num_v = 1
+	
+	set_button()
+	button1_h.get_node("button").connect("pressed",self,"_on_button_pressed",[1])
+	button1_v.get_node("button").connect("pressed",self,"_on_button_pressed",[1])
+	button2_h.get_node("button").connect("pressed",self,"_on_button_pressed",[2])
+	button2_v.get_node("button").connect("pressed",self,"_on_button_pressed",[2])
+	button3_h.get_node("button").connect("pressed",self,"_on_button_pressed",[3])
+	button3_v.get_node("button").connect("pressed",self,"_on_button_pressed",[3])
+	button4_h.get_node("button").connect("pressed",self,"_on_button_pressed",[4])
+	button4_v.get_node("button").connect("pressed",self,"_on_button_pressed",[4])
+	button5_h.get_node("button").connect("pressed",self,"_on_button_pressed",[5])
+	button5_v.get_node("button").connect("pressed",self,"_on_button_pressed",[5])
+	button6_h.get_node("button").connect("pressed",self,"_on_button_pressed",[6])
+	button6_v.get_node("button").connect("pressed",self,"_on_button_pressed",[6])
+	button7_h.get_node("button").connect("pressed",self,"_on_button_pressed",[7])
+	button7_v.get_node("button").connect("pressed",self,"_on_button_pressed",[7])
+	button8_h.get_node("button").connect("pressed",self,"_on_button_pressed",[8])
+	button8_v.get_node("button").connect("pressed",self,"_on_button_pressed",[8])
+	button9_h.get_node("button").connect("pressed",self,"_on_button_pressed",[9])
+	button9_v.get_node("button").connect("pressed",self,"_on_button_pressed",[9])
+	set_title_text(title_text)
+	set_desc_text_color(title_desc_text_color)
+	set_button_text_color(option_text_color)
+	set_menu_style(c_menu_style)
+	set_menu_layout(c_menu_layout)
+	set_button_number(option_number)
+	set_gui_scale(c_gui_scale)
+#	set_enable_button(enable_button)
+	set_btn_font_size(otn_font_size)
+	set_render_priority(c_render_priority)
+	set_title_font_size(title_desc_font_size)
+	set_alpha(c_panel_alpha) 
+	is_ready = true
+	if !Engine.editor_hint:
+		"""多人协同添加"""
+		# 判断项目中是否开启多人协同插件，如果开启了则获取ServerConnection单例,并连接接收消息的信号
+		var editor_plugins_enabled = ProjectSettings.get("editor_plugins/enabled")
+		for i in editor_plugins_enabled:
+			if i == "multiplayer":
+				server_connection = get_node_or_null("/root/ServerConnection")
+				if server_connection:
+					server_connection.connect("plugin_data_update", self, "_on_plugin_data_update")
+
+func _physics_process(delta):
+	if not Engine.editor_hint and c_enable_billboard:
+		var vp = get_viewport()
+		if vp:
+			var camera = vp.get_camera()
+			if camera:
+				look_at(camera.global_transform.origin, Vector3.UP)
+				rotate_object_local(Vector3.UP, deg2rad(180))
+	
+func set_button():
+	button1_h = get_gui().get_node("info_panel_h/layout/button1")
+	button1_v = get_gui().get_node("info_panel_v/layout/button1")
+	button2_h = get_gui().get_node("info_panel_h/layout/button2")
+	button2_v = get_gui().get_node("info_panel_v/layout/button2")
+	button3_h = get_gui().get_node("info_panel_h/layout/button3")
+	button3_v = get_gui().get_node("info_panel_v/layout/button3")
+	button4_h = get_gui().get_node("info_panel_h/layout/button4")
+	button4_v = get_gui().get_node("info_panel_v/layout/button4")
+	button5_h = get_gui().get_node("info_panel_h/layout/button5")
+	button5_v = get_gui().get_node("info_panel_v/layout/button5")
+	button6_h = get_gui().get_node("info_panel_h/layout/button6")
+	button6_v = get_gui().get_node("info_panel_v/layout/button6")
+	button7_h = get_gui().get_node("info_panel_h/layout/button7")
+	button7_v = get_gui().get_node("info_panel_v/layout/button7")
+	button8_h = get_gui().get_node("info_panel_h/layout/button8")
+	button8_v = get_gui().get_node("info_panel_v/layout/button8")
+	button9_h = get_gui().get_node("info_panel_h/layout/button9")
+	button9_v = get_gui().get_node("info_panel_v/layout/button9")
+
+func _on_button_pressed(index):
+	_on_button_pressed_sync(index)
+	
+	"""多人协同添加"""
+	# 调用ServerConnection中的方法，发送需要同步的信息
+	if is_mult_mode():
+		server_connection.send_plugin_data_sync("3d_menu",self,["_on_button_pressed",index])
+
+func _on_button_pressed_sync(index):
+	emit_signal("button_pressed",index)
+
+func _on_visibility_changed():
+	
+	"""多人协同添加"""
+	# 调用ServerConnection中的方法，发送需要同步的信息
+	if is_mult_mode():
+		var data = ["visible", self.visible]
+		server_connection.send_plugin_data_sync("3d_menu", self, data)
+
+func _on_plugin_data_update(plugin_name,plugin_node,plugin_data):
+	if plugin_name == "3d_menu":
+		match plugin_data[0]:
+			"_on_button_pressed":
+				plugin_node._on_button_pressed_sync(int(plugin_data[1]))
+			"visible":
+				#这里信号的断开也是为了避免无限发送同步消息的情况
+				plugin_node.disconnect("visibility_changed",self,"_on_visibility_changed")
+				plugin_node.visible = plugin_data[1]
+				plugin_node.connect("visibility_changed",self,"_on_visibility_changed")
+
+"""多人协同添加"""
+# 判断当前是否需要进行同步，当项目正在运行、项目中添加了多人协同插件、已经进入多人模式时进行同步
+func is_mult_mode():
+	return (!Engine.editor_hint and server_connection and server_connection.is_in_match)

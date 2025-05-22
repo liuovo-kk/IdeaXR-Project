@@ -1,0 +1,151 @@
+extends Spatial
+
+var page = 0
+var pageSize = 0
+var id = 0
+var model_id = null
+
+func _on_菜单按钮_pressed() -> void:
+	getFurnitureList(1,10)
+	
+# 获取家居列表
+func getFurnitureList(page, pageSize) :
+	# 构建API请求URL
+	var apiUrl = "http://172.31.233.146:15005/api/furniturelist?page="+ str(page) + "&page_size=" + str(pageSize)
+	page = page
+	pageSize = pageSize
+	$HTTP_list_request.request(apiUrl)
+
+
+func _on_HTTP_list_request_request_completed(result: int, response_code: int, headers: PoolStringArray, body: PoolByteArray) -> void:
+	# 解析JSON响应
+	if result != HTTPRequest.RESULT_SUCCESS:
+		print("请求失败，错误码：", result)
+		return
+	
+	var parse_result = JSON.parse(body.get_string_from_utf8())
+	if parse_result.error != OK:
+		print("JSON解析失败：", parse_result.error_string)
+		return
+	
+	var data = parse_result.result
+	#print(data)
+	
+	# 处理空数据情况
+	if data.empty() or not data.has("data") or not data.has("total"):
+		print("响应数据格式不正确")
+		handleFurnitureData([], 0, page, pageSize)
+		return
+	
+	# 处理返回的家居数据
+	handleFurnitureData(data.data, data.total, page, pageSize)
+
+func handleFurnitureData(furniture_list, total_items, current_page, page_size):
+	print("当前页为：" , current_page , "获取到", len(furniture_list), "条家具数据，共", total_items, "条")
+	# 遍历家居列表
+	for i in range(furniture_list.size()):
+		var item = furniture_list[i]
+		
+		if item.has("model_id"):
+			print("Item", i, " model_id:", item.model_id)
+			print(item.image)
+		else:
+			print("Item", i, "缺少model_id字段")
+	
+		#if i == 8:
+			#id = i
+			#download_jpg(item,i)
+		
+		id=i
+		# 创建家具按钮
+		createFurnitureButton(item,i)
+
+# 下载家居图片
+func download_jpg(item,i):
+	# 创建http节点
+	var http_request_jpg = HTTPRequest.new()
+	add_child(http_request_jpg)
+	# http请求
+	var url_jpg = item.image
+	http_request_jpg.request(url_jpg)
+	# 连接信号
+	http_request_jpg.connect("request_completed",self,"_on_JPG请求完成")
+
+# 创建家居按钮	
+func createFurnitureButton(item,i):
+	var button = Button.new()
+	$家居列表容器.add_child(button)
+	button.text = "item"+str(i)
+	# 按钮添加图标
+	var res = load("res://item" + str(id) + ".jpg")
+	button.icon = res
+	button.set_expand_icon(true)
+	if i == 4:
+		button.connect("pressed",self,"_on_button_pressed")
+
+# 按下按钮加载家具
+func _on_button_pressed():
+	downloadFurniture()
+
+	var scene = load("res://table_005.obj")
+	var instance = scene.instance()
+	add_child(instance)
+	if instance != null:
+		print("添加家具节点成功")
+	else:
+		print("添加家具节点失败")
+	
+# 下载家居模型
+func downloadFurniture():
+	# 创建http节点
+	var http_request_obj = HTTPRequest.new()
+	var http_request_mtl = HTTPRequest.new()
+	add_child(http_request_obj)
+	add_child(http_request_mtl)
+	# http请求
+	model_id = "table_005"
+	var url_obj = "http://172.31.233.146:15005/?id=" + model_id + "&type=model"
+	var url_mtl = "http://172.31.233.146:15005/?id=" + model_id + "&type=mtl"
+	http_request_obj.request(url_obj)
+	http_request_mtl.request(url_mtl)
+	# 连接信号
+	http_request_obj.connect("request_completed",self,"_on_OBJ请求完成")
+	http_request_mtl.connect("request_completed",self,"_on_MTL请求完成")
+
+func _on_JPG请求完成(result, _response_code, _headers, body):
+	var file_name = "item" + str(id) + ".jpg"
+	
+	var file = File.new()
+	if file.open(file_name, File.WRITE) != OK:
+		print("无法保存文件：" + file_name)
+		return
+	
+	file.store_buffer(body)
+	file.close()
+	print("文件下载成功：" + file_name)
+	
+
+func _on_OBJ请求完成(result, _response_code, _headers, body):
+	var file_name =model_id + ".obj"
+	
+	var file = File.new()
+	if file.open(file_name, File.WRITE) != OK:
+		print("无法保存文件：" + file_name)
+		return
+	
+	file.store_buffer(body)
+	file.close()
+	print("文件下载成功：" + file_name)
+
+func _on_MTL请求完成(result, _response_code, _headers, body):
+	var file_name =model_id + ".mtl"
+	
+	var file = File.new()
+	if file.open(file_name, File.WRITE) != OK:
+		print("无法保存文件：" + file_name)
+		return
+	
+	file.store_buffer(body)
+	file.close()
+	print("文件下载成功：" + file_name)
+	

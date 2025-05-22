@@ -22,7 +22,12 @@ _global_script_class_icons={
 [application]
 
 config/name="IdeaXR-LayoutProject"
+run/main_scene="res://DefaultRes/EmptyScene.scene"
 config/icon="res://DefaultRes/icon.png"
+
+[editor_plugins]
+
+enabled=PoolStringArray( "3d_menu" )
 
 [rendering]
 
